@@ -2,8 +2,11 @@ name: Daily Job Alert
 
 on:
   schedule:
-    # 06:00 East Africa Time (UTC+3) = 03:00 UTC. Adjust as you like.
+    # Three times a day, East Africa Time (UTC+3):
+    # 06:00 EAT → 03:00 UTC | 12:00 EAT → 09:00 UTC | 18:00 EAT → 15:00 UTC
     - cron: "0 3 * * *"
+    - cron: "0 9 * * *"
+    - cron: "0 15 * * *"
   workflow_dispatch:
     inputs:
       test_telegram:

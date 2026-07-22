@@ -55,10 +55,10 @@ secret**. Add two secrets:
 
 ### 4. Turn it on
 
-The workflow in `.github/workflows/daily.yml` runs automatically every day
-at 06:00 East Africa Time. You can also trigger it manually any time from
-the repo's **Actions** tab → "Daily Job Alert" → "Run workflow", to test it
-immediately instead of waiting for the schedule.
+The workflow in `.github/workflows/daily.yml` runs automatically three times
+a day at 06:00, 12:00, and 18:00 East Africa Time. You can also trigger it
+manually any time from the repo's **Actions** tab → "Daily Job Alert" →
+"Run workflow", to test it immediately instead of waiting for the schedule.
 
 That's it. New matching jobs will land in your Telegram chat every day.
 
