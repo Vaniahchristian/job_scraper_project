@@ -30,6 +30,7 @@ What this deliberately does NOT do:
 
 import json
 import re
+import os
 import sys
 from pathlib import Path
 from urllib.request import urlopen, Request
@@ -77,8 +78,8 @@ SOURCE_MUST_MATCH = {
 }
 
 # Test credentials — swap for env secrets before making the repo public.
-TELEGRAM_BOT_TOKEN = "REDACTED_TELEGRAM_BOT_TOKEN"
-TELEGRAM_CHAT_ID = "1799637604"
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 
 def load_seen():
