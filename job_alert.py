@@ -51,10 +51,14 @@ KEYWORDS = [
     "php developer", ".net developer", "dotnet developer",
     "javascript developer", "typescript developer", "api developer",
     "devops", "cloud engineer", "systems developer", "applications developer",
-    "programmer", "it developer", "web development", "software development",
-    "information technology", "information management", "data engineer", "data analyst",
-    "ict", "mis officer", "database admin", "database administrator",
-    "database developer", "network engineer",
+    "programmer", "it developer", "it officer", "ict officer",
+    "web development", "software development",
+    "information technology", "information management",
+    "data engineer", "data analyst", "systems administrator", "system administrator",
+    "network engineer", "network administrator", "database admin",
+    "database administrator", "database developer",
+    "mis officer", "computer science", "tech lead", "qa engineer",
+    "quality assurance engineer", "devops engineer",
 ]
 
 # Sources: each is a public RSS/Atom feed. Add more here as you find them.
@@ -100,6 +104,19 @@ def fetch(url, timeout=20):
         return resp.read()
 
 
+def item_text(el, *tags):
+    """First non-empty text among local tag names (handles RSS namespaces)."""
+    for tag in tags:
+        direct = el.findtext(tag)
+        if direct and direct.strip():
+            return direct.strip()
+        for child in el:
+            local = child.tag.rsplit("}", 1)[-1]
+            if local == tag and child.text and child.text.strip():
+                return child.text.strip()
+    return ""
+
+
 def parse_rss(xml_bytes):
     """Returns list of (title, link, summary) tuples from an RSS/Atom feed."""
     items = []
@@ -108,11 +125,11 @@ def parse_rss(xml_bytes):
     except ET.ParseError:
         return items
 
-    # Standard RSS 2.0
+    # Standard RSS 2.0 (prefer full content:encoded over truncated description)
     for item in root.findall(".//item"):
-        title = (item.findtext("title") or "").strip()
-        link = (item.findtext("link") or "").strip()
-        desc = (item.findtext("description") or "").strip()
+        title = item_text(item, "title")
+        link = item_text(item, "link")
+        desc = item_text(item, "encoded", "content", "description")
         if title and link:
             items.append((title, link, desc))
 
@@ -123,7 +140,9 @@ def parse_rss(xml_bytes):
             title = (entry.findtext("a:title", default="", namespaces=ns) or "").strip()
             link_el = entry.find("a:link", ns)
             link = link_el.get("href") if link_el is not None else ""
-            summary = (entry.findtext("a:summary", default="", namespaces=ns) or "").strip()
+            summary = item_text(entry, "content", "summary")
+            if not summary:
+                summary = (entry.findtext("a:summary", default="", namespaces=ns) or "").strip()
             if title and link:
                 items.append((title, link, summary))
 
