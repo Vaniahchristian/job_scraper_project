@@ -29,7 +29,6 @@ What this deliberately does NOT do:
 """
 
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -77,8 +76,9 @@ SOURCE_MUST_MATCH = {
     ),
 }
 
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+# Test credentials — swap for env secrets before making the repo public.
+TELEGRAM_BOT_TOKEN = "REDACTED_TELEGRAM_BOT_TOKEN"
+TELEGRAM_CHAT_ID = "1799637604"
 
 
 def load_seen():

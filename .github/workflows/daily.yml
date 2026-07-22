@@ -20,9 +20,6 @@ jobs:
           python-version: "3.12"
 
       - name: Run scraper
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python job_alert.py
 
       - name: Save updated seen_jobs.json
