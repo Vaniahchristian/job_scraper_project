@@ -7,18 +7,20 @@ server, no laptop that has to stay on.
 ## What it covers, and what it doesn't
 
 **Scrapes directly (via their public RSS feeds):**
-- The Ugandan Jobline
-- Daily Job Net
+- The Ugandan Jobline — general Uganda listings
+- Daily Job Net — general Uganda listings
+- ReliefWeb Uganda — NGO / humanitarian roles (public RSS stand-in for UNjobs)
+- Q-Sourcing Servtec — engineering / energy / technical roles (Uganda-filtered)
 
-**Does NOT scrape (and why):**
-- **LinkedIn** — requires login, and scraping it breaks their Terms of
-  Service. Use LinkedIn's own alert feature instead (2 minutes, see below).
-- **BrighterMonday** — their robots.txt blocks automated access. Use their
-  built-in job alert emails instead (see below).
+**Does NOT scrape (use each site's own alerts — see below):**
+- **BrighterMonday** — best for wide corporate variety; robots.txt blocks bots
+- **Fuzu** — best for career guidance and entry-level; no public RSS
+- **LinkedIn** — best for executive / corporate networking; ToS forbids scraping
+- **Great Uganda Jobs** — best for local government / public roles; no usable RSS
+- **UNjobs.org** — no public RSS; ReliefWeb Uganda above covers the same niche
 
-This keeps the whole setup on the right side of every site's rules, while
-still covering LinkedIn and BrighterMonday through their own official alert
-tools.
+This keeps the setup on the right side of every site's rules, while still
+covering the non-RSS boards through their own official alert tools.
 
 ---
 
@@ -78,6 +80,24 @@ active at once.
 1. Go to brightermonday.co.ug, search "IT & Software" jobs.
 2. Look for **"Sign up for job alerts"** on the results page, enter your
    email, and select the IT & Software category.
+
+## Covering Fuzu (official, free)
+
+1. Create a free account at [fuzu.com/uganda](https://www.fuzu.com/uganda).
+2. Set location to Uganda and turn on **smart job alerts** for the roles
+   you want (entry-level and career-guidance listings are Fuzu's strength).
+
+## Covering Great Uganda Jobs (official, free)
+
+1. Open [greatugandajobs.com/jobseeker/job-alerts](https://www.greatugandajobs.com/jobseeker/job-alerts).
+2. Subscribe with your email — useful for local government and public-sector
+   roles that rarely show up on the tech boards.
+
+## Covering UNjobs / NGO roles
+
+ReliefWeb Uganda is already scraped by this script (NGO / humanitarian).
+Optionally also bookmark [unjobs.org/duty_stations/uganda](https://unjobs.org/duty_stations/uganda)
+and check it weekly for agency postings that aren't on ReliefWeb yet.
 
 ---
 

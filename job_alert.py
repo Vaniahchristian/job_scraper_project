@@ -3,22 +3,29 @@
 Daily job alert scraper for Uganda tech job boards.
 
 What this does:
-- Pulls new job listings from a few Uganda job sites that publish public RSS
-  feeds (meant for exactly this kind of automated use, so no robots.txt or
-  terms-of-service issue).
+- Pulls new job listings from Uganda / East Africa job sites that publish
+  public RSS feeds (meant for exactly this kind of automated use, so no
+  robots.txt or terms-of-service issue).
 - Filters listings against a keyword list built from your skills
   (React, Node, Flutter, Laravel, full-stack, etc).
 - Keeps track of what it has already alerted you about (seen_jobs.json) so
   you never get the same listing twice.
 - Sends new matches to you on Telegram.
 
+Coverage map (scraped vs official alerts):
+- Scraped via RSS: The Ugandan Jobline, Daily Job Net, ReliefWeb Uganda
+  (NGO / humanitarian — stands in for UNjobs), Q-Sourcing Servtec
+  (engineering / energy).
+- Official alerts only (see README.md): BrighterMonday, Fuzu, LinkedIn,
+  Great Uganda Jobs. Those either block bots or have no public feed.
+
 What this deliberately does NOT do:
 - Scrape LinkedIn. LinkedIn requires login and its Terms of Service forbid
   automated scraping. Use LinkedIn's own "Create search alert" feature
   instead (see README.md for the two-minute setup).
-- Scrape BrighterMonday directly. Their robots.txt disallows automated
-  access. Use their built-in "Job Alerts" email subscription instead
-  (see README.md).
+- Scrape BrighterMonday, Fuzu, or Great Uganda Jobs. No usable public RSS
+  (and BrighterMonday's robots.txt disallows automated access). Use each
+  site's built-in job-alert email / account alerts instead (see README.md).
 """
 
 import json
@@ -44,12 +51,30 @@ KEYWORDS = [
     "javascript developer", "typescript developer", "api developer",
     "devops", "cloud engineer", "systems developer", "applications developer",
     "programmer", "it developer", "web development", "software development",
+    "information management", "data engineer", "data analyst",
+    "ict", "mis officer", "database admin", "database administrator",
+    "database developer", "network engineer",
 ]
 
 # Sources: each is a public RSS/Atom feed. Add more here as you find them.
+# Notes in comments match the board's usual strength.
 SOURCES = {
+    # General Uganda tech / corporate listings
     "The Ugandan Jobline": "https://theugandanjobline.com/feeds/posts/default?alt=rss",
     "Daily Job Net": "https://dailyjobnet.com/feed/",
+    # NGO / humanitarian (public ReliefWeb feed — closest RSS stand-in for UNjobs Uganda)
+    "ReliefWeb Uganda": "https://reliefweb.int/jobs/rss.xml?country=240",
+    # Engineering / energy / technical roles across Q-Sourcing (Uganda search)
+    "Q-Sourcing Servtec": "https://qsourcing.com/feed/?post_type=job_listing&s=uganda",
+}
+
+# Optional extra text that must appear in title+summary for a source.
+# Used when a feed is regional and we only want Uganda hits.
+SOURCE_MUST_MATCH = {
+    "Q-Sourcing Servtec": (
+        "uganda", "kampala", "entebbe", "gulu", "mbarara", "jinja",
+        "mbale", "qssu",
+    ),
 }
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -104,7 +129,24 @@ def parse_rss(xml_bytes):
 
 def matches_keywords(title, summary):
     text = f"{title} {summary}".lower()
-    return any(kw in text for kw in KEYWORDS)
+    for kw in KEYWORDS:
+        # Short tokens (e.g. "ict") must be whole words — otherwise
+        # "ict" matches inside "district", "strict", org names like "ICTJ", etc.
+        if len(kw) <= 3:
+            if re.search(rf"(?<![a-z0-9]){re.escape(kw)}(?![a-z0-9])", text):
+                return True
+        elif kw in text:
+            return True
+    return False
+
+
+def matches_source_location(source_name, title, summary):
+    """If a source has a location allow-list, require at least one hit."""
+    needles = SOURCE_MUST_MATCH.get(source_name)
+    if not needles:
+        return True
+    text = f"{title} {summary}".lower()
+    return any(n in text for n in needles)
 
 
 def clean_html(text):
@@ -147,7 +189,8 @@ def main():
             if link in seen:
                 continue
             summary_clean = clean_html(summary)
-            if matches_keywords(title, summary_clean):
+            if (matches_source_location(source_name, title, summary_clean)
+                    and matches_keywords(title, summary_clean)):
                 new_matches.append((source_name, title, link))
             seen.add(link)  # mark seen either way so we don't re-check non-matches forever
 
