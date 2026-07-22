@@ -77,7 +77,6 @@ SOURCE_MUST_MATCH = {
     ),
 }
 
-# Test credentials — swap for env secrets before making the repo public.
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
@@ -158,7 +157,7 @@ def send_telegram(message):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("Telegram not configured (missing TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID).")
         print("Would have sent:\n", message)
-        return
+        return False
     import urllib.parse
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     data = urllib.parse.urlencode({
@@ -170,14 +169,43 @@ def send_telegram(message):
     req = Request(url, data=data)
     try:
         with urlopen(req, timeout=20) as resp:
-            resp.read()
+            body = json.loads(resp.read().decode())
+        if not body.get("ok"):
+            print(f"Telegram API error: {body}", file=sys.stderr)
+            return False
+        print("Telegram message sent.")
+        return True
     except URLError as e:
         print(f"Failed to send Telegram message: {e}", file=sys.stderr)
+        return False
+
+
+def telegram_status():
+    if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+        masked = f"...{TELEGRAM_CHAT_ID[-4:]}" if len(TELEGRAM_CHAT_ID) >= 4 else "(set)"
+        return f"configured (chat_id {masked})"
+    return "NOT configured — check TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID secrets"
+
+
+def send_test_message():
+    print(f"Telegram: {telegram_status()}")
+    ok = send_telegram(
+        "<b>Job alert bot test</b>\n\n"
+        "If you see this, Telegram is wired up correctly."
+    )
+    sys.exit(0 if ok else 1)
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "--test":
+        send_test_message()
+
     seen = load_seen()
     new_matches = []
+    new_urls = 0
+
+    print(f"Telegram: {telegram_status()}")
+    print(f"Already tracking {len(seen)} job URL(s).")
 
     for source_name, feed_url in SOURCES.items():
         try:
@@ -186,14 +214,21 @@ def main():
             print(f"[{source_name}] fetch failed: {e}", file=sys.stderr)
             continue
 
-        for title, link, summary in parse_rss(raw):
+        items = parse_rss(raw)
+        print(f"[{source_name}] {len(items)} listing(s) in feed.")
+
+        for title, link, summary in items:
             if link in seen:
                 continue
+            new_urls += 1
             summary_clean = clean_html(summary)
             if (matches_source_location(source_name, title, summary_clean)
                     and matches_keywords(title, summary_clean)):
                 new_matches.append((source_name, title, link))
             seen.add(link)  # mark seen either way so we don't re-check non-matches forever
+
+    print(f"New URLs since last run: {new_urls}")
+    print(f"New keyword matches: {len(new_matches)}")
 
     if new_matches:
         lines = [f"<b>{len(new_matches)} new job match(es) today</b>\n"]
@@ -205,7 +240,9 @@ def main():
             send_telegram(message[i:i + 3500])
         print(f"Sent {len(new_matches)} new matches.")
     else:
-        print("No new matches today.")
+        print("No new matches today — no Telegram message sent.")
+        print("(This is normal if you already ran locally or all new listings "
+              "didn't match your keywords.)")
 
     save_seen(seen)
 
