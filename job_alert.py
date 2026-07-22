@@ -13,7 +13,7 @@ What this does:
 - Sends new matches to you on Telegram.
 
 Coverage map (scraped vs official alerts):
-- Scraped via RSS: The Ugandan Jobline, Daily Job Net, ReliefWeb Uganda
+- Scraped via RSS: The Ugandan Jobline, Daily Job Net, JobAdverts.ug, ReliefWeb Uganda
   (NGO / humanitarian — stands in for UNjobs), Q-Sourcing Servtec
   (engineering / energy).
 - Official alerts only (see README.md): BrighterMonday, Fuzu, LinkedIn,
@@ -51,7 +51,7 @@ KEYWORDS = [
     "javascript developer", "typescript developer", "api developer",
     "devops", "cloud engineer", "systems developer", "applications developer",
     "programmer", "it developer", "web development", "software development",
-    "information management", "data engineer", "data analyst",
+    "information technology", "information management", "data engineer", "data analyst",
     "ict", "mis officer", "database admin", "database administrator",
     "database developer", "network engineer",
 ]
@@ -62,6 +62,8 @@ SOURCES = {
     # General Uganda tech / corporate listings
     "The Ugandan Jobline": "https://theugandanjobline.com/feeds/posts/default?alt=rss",
     "Daily Job Net": "https://dailyjobnet.com/feed/",
+    # Government / university / corporate round-up posts (e.g. UNCST, Makerere)
+    "JobAdverts.ug": "https://jobadverts.ug/feed/",
     # NGO / humanitarian (public ReliefWeb feed — closest RSS stand-in for UNjobs Uganda)
     "ReliefWeb Uganda": "https://reliefweb.int/jobs/rss.xml?country=240",
     # Engineering / energy / technical roles across Q-Sourcing (Uganda search)

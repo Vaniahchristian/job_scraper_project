@@ -9,6 +9,7 @@ server, no laptop that has to stay on.
 **Scrapes directly (via their public RSS feeds):**
 - The Ugandan Jobline — general Uganda listings
 - Daily Job Net — general Uganda listings
+- JobAdverts.ug — government / university / corporate round-up posts
 - ReliefWeb Uganda — NGO / humanitarian roles (public RSS stand-in for UNjobs)
 - Q-Sourcing Servtec — engineering / energy / technical roles (Uganda-filtered)
 
