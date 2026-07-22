@@ -8,9 +8,10 @@ What this does:
   robots.txt or terms-of-service issue).
 - Filters listings against a keyword list built from your skills
   (React, Node, Flutter, Laravel, full-stack, etc).
-- Keeps track of what it has already alerted you about (seen_jobs.json) so
-  you never get the same listing twice.
-- Sends new matches to you on Telegram.
+- Keeps track of matched listings you have already been told about
+  (seen_jobs.json) so each Telegram digest can label jobs as NEW vs SEEN.
+- Always sends a Telegram digest: new matches + previously seen matches
+  still in the feeds (even when there are zero new ones).
 
 Coverage map (scraped vs official alerts):
 - Scraped via RSS: The Ugandan Jobline, Daily Job Net, JobAdverts.ug, ReliefWeb Uganda
@@ -198,16 +199,51 @@ def send_test_message():
     sys.exit(0 if ok else 1)
 
 
+def format_job_line(source_name, title, link):
+    return f"\u2022 <b>{title}</b>\n  {source_name}\n  {link}"
+
+
+def build_digest(new_matches, seen_matches):
+    """Build the Telegram digest listing new and previously seen matches."""
+    lines = [
+        "<b>Uganda job alert</b>",
+        f"<b>{len(new_matches)} new</b> · <b>{len(seen_matches)} seen</b>",
+    ]
+
+    lines.append("")
+    lines.append(f"<b>NEW ({len(new_matches)})</b>")
+    if new_matches:
+        lines.extend(
+            format_job_line(source, title, link)
+            for source, title, link in new_matches
+        )
+    else:
+        lines.append("None this run.")
+
+    lines.append("")
+    lines.append(f"<b>SEEN ({len(seen_matches)})</b>")
+    if seen_matches:
+        lines.extend(
+            format_job_line(source, title, link)
+            for source, title, link in seen_matches
+        )
+    else:
+        lines.append("None yet.")
+
+    return "\n\n".join(lines)
+
+
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "--test":
         send_test_message()
 
+    # seen_jobs.json stores matched job URLs only (not every listing scraped).
     seen = load_seen()
     new_matches = []
-    new_urls = 0
+    seen_matches = []
 
     print(f"Telegram: {telegram_status()}")
-    print(f"Already tracking {len(seen)} job URL(s).")
+    print(f"Previously matched jobs on file: {len(seen)}")
 
     for source_name, feed_url in SOURCES.items():
         try:
@@ -220,31 +256,27 @@ def main():
         print(f"[{source_name}] {len(items)} listing(s) in feed.")
 
         for title, link, summary in items:
-            if link in seen:
-                continue
-            new_urls += 1
             summary_clean = clean_html(summary)
-            if (matches_source_location(source_name, title, summary_clean)
+            if not (matches_source_location(source_name, title, summary_clean)
                     and matches_keywords(title, summary_clean)):
-                new_matches.append((source_name, title, link))
-            seen.add(link)  # mark seen either way so we don't re-check non-matches forever
+                continue
+            row = (source_name, title, link)
+            if link in seen:
+                seen_matches.append(row)
+            else:
+                new_matches.append(row)
+                seen.add(link)
 
-    print(f"New URLs since last run: {new_urls}")
     print(f"New keyword matches: {len(new_matches)}")
+    print(f"Seen keyword matches still in feeds: {len(seen_matches)}")
 
-    if new_matches:
-        lines = [f"<b>{len(new_matches)} new job match(es) today</b>\n"]
-        for source_name, title, link in new_matches:
-            lines.append(f"\u2022 <b>{title}</b>\n  {source_name}\n  {link}")
-        message = "\n\n".join(lines)
-        # Telegram messages cap at 4096 chars; split if needed
-        for i in range(0, len(message), 3500):
-            send_telegram(message[i:i + 3500])
-        print(f"Sent {len(new_matches)} new matches.")
-    else:
-        print("No new matches today — no Telegram message sent.")
-        print("(This is normal if you already ran locally or all new listings "
-              "didn't match your keywords.)")
+    message = build_digest(new_matches, seen_matches)
+    # Telegram messages cap at 4096 chars; split if needed
+    for i in range(0, len(message), 3500):
+        send_telegram(message[i:i + 3500])
+    print(
+        f"Sent digest: {len(new_matches)} new, {len(seen_matches)} seen."
+    )
 
     save_seen(seen)
 
